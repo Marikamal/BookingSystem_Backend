@@ -3,15 +3,16 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Gate;
 
-class StorePropertyRequest extends FormRequest
+class UpdateBookingRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return true;
+        return Gate::allows('bookings-manage');
     }
 
     /**
@@ -19,14 +20,12 @@ class StorePropertyRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
      */
-    public function rules()
+    public function rules(): array
     {
         return [
-            'owner_id'=> 'required|exists:users,id',
-            'name' => 'required',
-            'city_id' => 'required|exists:cities,id',
-            'address_street' => 'required',
-            'address_postcode' => 'required',
+            'rating' => 'integer|between:1,10',
+            'review_comment' => 'min:20',
+
         ];
     }
 }

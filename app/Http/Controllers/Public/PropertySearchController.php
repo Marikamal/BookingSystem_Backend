@@ -27,6 +27,8 @@ class PropertySearchController extends Controller
             'facilities',
             'media' => fn($query) => $query->orderBy('position'),])
 
+        ->withAvg('bookings', 'rating')
+
         ->when($request->city, function($query) use ($request) {
             $query->where('city_id', $request->city);
             })
@@ -54,6 +56,8 @@ class PropertySearchController extends Controller
             $query->withWhereHas('apartments', function($query)use ($request){
                 $query->where('capacity_adults', '>=', $request->adults)
                       ->where('capacity_children', '>=', $request->children)
+                      ->orderBy('capacity_adults')
+                      ->orderBy('capacity_children')
                       ->take(1);
                 });
         })
@@ -62,8 +66,20 @@ class PropertySearchController extends Controller
             $query->whereHas('facilities', function($query) use($request){
                 $query->whereIn('facilities.id', $request->facilities);});
             })
-           
 
+        ->when($request->price_from, function($query) use ($request){
+            $query->whereHas('apartments.prices', function($query) use ($request){
+                $query->where('price', '>=', $request->price_from);
+            });
+        })
+
+        ->when($request->price_to, function($query) use ($request) {
+            $query->whereHas('apartments.prices', function($query) use ($request){
+                $query->where('price', '<=', $request->price_to);
+            });
+        })
+        
+        ->orderBy('bookings_avg_rating', 'desc')
         ->get();
         
         $facilities = Facility::query()

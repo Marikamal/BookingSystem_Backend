@@ -12,6 +12,8 @@ use App\Models\Facility;
 use App\Models\ApartmentPrice;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Staudenmeir\EloquentEagerLimit\HasEagerLimit;
+use App\Models\Booking;
+use Carbon\Carbon;
 
 class Apartment extends Model
 {
@@ -79,4 +81,33 @@ class Apartment extends Model
         {
             return $this->hasMany(ApartmentPrice::class);
         }
+
+        public function calculatePriceForDates($startDate, $endDate)
+        {
+            // Convert to Carbon if not already
+            if (!$startDate instanceof Carbon) {
+                $startDate = Carbon::parse($startDate)->startOfDay();
+            }
+
+            if (!$endDate instanceof Carbon) {
+                $endDate = Carbon::parse($endDate)->endOfDay();
+            }
+
+            $cost = 0;
+
+            while ($startDate->lte($endDate)) {
+                $cost += $this->prices->where(function (ApartmentPrice $price) use($startDate){
+                    return $price->start_date->lte($startDate) && $price->end_date->gte($startDate);
+                })->value('price');
+            $startDate->addDay();
+            }
+        return $cost;
+        
+        }
+
+        public function bookings()
+        {
+            return $this->hasMany(Booking::class);
+        }
+
 }

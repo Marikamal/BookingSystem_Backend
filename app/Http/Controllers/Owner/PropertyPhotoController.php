@@ -20,16 +20,10 @@ class PropertyPhotoController extends Controller
         }
 
         $photo = $property->addMediaFromRequest('photo')->toMediaCollection();
-        $position = Media::query()
-            ->where('model_type', 'App\Models\Property')
-            ->where('model_id', $property->id)
-            ->max('position') + 1;
-        $photo->position = $position;
         $photo->save();
         return [
             'filename' => $photo->getUrl(),
             'thumbnail' => $photo->getUrl('thumbnail'),
-            'position' => $photo->position
         ];
             
     }
@@ -39,32 +33,42 @@ class PropertyPhotoController extends Controller
         if ($property->owner_id != auth()->id() || $photo->model_id != $property->id){
             abort(403);
         }
-
-        $query = Media::query()
-            ->where('model_type', 'App\Models\Property')
-            ->where('model_id', $photo->model_id);
-
-        if ($newPosition < $photo->position) {
-            $query
-                ->whereBetween('position', [$newPosition, $photo->position-1])
-                ->increment('position');
-        } else {
-
-            $query
-                ->whereBetween('position', [$photo->position+1, $newPosition])
-                ->decrement('position');
-        }
-
-        $photo->position = $newPosition;
+        
+        $photo2= Media::where('model_type', 'App\Models\Property')
+        ->where('model_id', $photo->model_id)
+        ->where('order_column',$newPosition)
+        ->first();
+        $current_order = $photo->order_column;
+        $photo->order_column = $newPosition;
         $photo->save();
+        $photo2->order_column=$current_order;
+        $photo2->save();
         return [
-            'newPosition' => $photo->position
+            'newPosition' => $photo->order_column
         ];
     }
 
 
 
-
+    public function reorderd(Property $property, Media $currentPhoto, int $newPosition)
+    {
+        abort_if($property->owner_id != auth()->id() || $currentPhoto->model_id != $property->id, 403);
+    
+        $newPositionPhoto = $property->media()->where('order_column', $newPosition)->first();
+    
+        DB::transaction(function () use ($currentPhoto, $newPositionPhoto, $newPosition) {
+            $currentPhoto->order_column = $newPosition;
+            $currentPhoto->save();
+    
+            $newPositionPhoto->order_column = $currentPhoto->order_column;
+            $newPositionPhoto->save();
+        });
+    
+        return [
+            'newPosition' => $currentPhoto->order_column
+        ];
+    }
+    
 
 
 

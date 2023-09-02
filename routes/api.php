@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Public;
 use App\Http\Controllers\Owner\PropertyController;
 use App\Http\Controllers\Owner\PropertyPhotoController;
-use App\Http\Controllers\Owner\BookingController;
+use App\Http\Controllers\User\BookingController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -18,9 +18,11 @@ use App\Http\Controllers\Owner\BookingController;
 */
 
 Route::middleware('auth:sanctum')->group(function() {
-    // No owner/user grouping, for now, will do it later with more routes
-    Route::get('user/bookings',[BookingController::class, 'index']);
-    
+
+    Route::prefix('user')->group(function () {
+        Route::resource('bookings',BookingController::class);
+        });
+
     Route::prefix('owner')->group(function () {
         Route::get('properties',[PropertyController::class, 'index']);
         Route::post('properties',[PropertyController::class, 'store']);

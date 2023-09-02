@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\City;
 use App\Models\Apartment;
+use App\Models\Booking;
 use App\Observers\PropertyObserver;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use App\Models\Facility;
@@ -45,11 +46,11 @@ class Property extends Model implements HasMedia
         ->width(800);
     }
 
-    public static function booted()
-    {
-        parent::booted();
-        self::observe(PropertyObserver::class);
-    }
+    // public static function booted()
+    // {
+    //     parent::booted();
+    //     self::observe(PropertyObserver::class);
+    // }
 
     public function city()
     {
@@ -64,6 +65,11 @@ class Property extends Model implements HasMedia
     public function facilities()
     {
         return $this->belongsToMany(Facility::class);
+    }
+
+    public function bookings()
+    {
+        return $this->hasManyThrough(Booking::class, Apartment::class);
     }
     
 }
